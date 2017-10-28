@@ -35,13 +35,16 @@ const int w = 20;
 const int h = 50;
 const int gridSize = 1000;
 
-//Define a cell
+//Define a cell and world variables
 char cell;
 char alive;
 bool world[gridSize][gridSize] = { false };
 bool worldnew[gridSize][gridSize] = { false };
 ////prototypes
-void menu(); void submenu(); void draw(); void fillrandom();
+void menu();
+void submenu();
+void draw();
+void fillrandom();
 int alivecounter(int i, int j);
 
 //matrixnew filler THIS IS SUPPOSED TO CREATE THE NEW MATRIX BASED ON HOW MANY NEIGHBOURS 
@@ -197,7 +200,7 @@ char displaychar(bool alive) {
 void draw() {
 	for (int x = 0; x < w; x++) {
 		for (int y = 0; y < h; y++) {
-			cout << displaychar(world[x][y]); //IF YOU WANT TO SEE THE AMOUNT OF NEIGHBOURS CHANGE THE COUT TO alivecounter(x,y)
+			cout << alivecounter(x,y); //IF YOU WANT TO SEE THE AMOUNT OF NEIGHBOURS CHANGE THE COUT TO alivecounter(x,y)
 		} cout << endl;
 	}cout << menutext << endl;
 	screenchange = false;
@@ -215,8 +218,8 @@ bool inworld(int a, int b) {
 int alivecounter(int i, int j) {
 	int neighbour_counter = 0;
 	bool neighbour_state;
-	for (int x = -2; x < 1; x++) {
-		for (int y = -2; y < 1; y++) {
+	for (int x = -1; x < 2; x++) {
+		for (int y = -1; y < 2; y++) {
 			if (i + x < 0 || j + y < 0 || i + x > gridSize || j + y > gridSize) {
 				neighbour_state = false;
 			}
