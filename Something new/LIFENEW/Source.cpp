@@ -253,6 +253,7 @@ int main() {
 	fill();
 	matrixfiller();
 	draw();
+	cout << "How many iterations do you want to run?";
 	cin >> iterations;
 	if (iterations >= 1) {
 		for (int t = 0; t <= iterations; t++) {
