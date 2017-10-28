@@ -14,40 +14,57 @@ using namespace std;
 
 //fstream
 ifstream infile;
-
-
+bool donereading = false;
+char charin;
+int test;
 
 //Define gridSize
-const int gridSize = 50;
+const int gridSize = 100;
+bool world[gridSize][gridSize] = { false };
 
 //Define a cell
 char cell;
 char alive;
-bool thijs[gridSize][gridSize];
+
 //file reader
-bool read() {
-	infile.open("infile.txt");
-	char charin = infile.get();
-	cout << charin;
-	if (!infile.eof()) {
-		if (charin = ' ') {
-			alive = false;
+char read() {
+	charin = infile.get();
+	if (!donereading) {
+		if (infile.eof()) {
+			infile.close();
+			donereading = true;
+			return '0';
 		}
 		else {
-			alive = true;
+			return charin;
 		}
-		charin = infile.get();
 	}
-	return alive;
+	return 'e';
 }
-
 
 //fill random
 void fillrandom() {
 	for (int c = 0; c < (gridSize * gridSize) + 1; c++) {
 		for (int i = 0; i < gridSize; i++) {
 			for (int j = 0; j < gridSize; j++) {
-				thijs[i][j] = read();
+				char infilechar = read();
+				if (infilechar != 'e') {
+					if (infilechar == ' ') {
+						alive = false;
+					}
+					else if (infilechar == '\n') {
+						i++; j = -1;
+						alive = false;
+					}
+					else {
+						alive = true;
+					}
+					world[i][j] = alive;
+				}
+				else {
+					return;
+				}
+				//				cout << thijs[i][j];
 			}
 		}
 	}
@@ -58,22 +75,21 @@ char displaychar(bool alive) {
 		cell = 'X';
 	}
 	else {
-		cell = ' ';
+		cell = '.';
 	}
 	return cell;
 }
 
 //Create the display in console
 int main() {
+	infile.open("infile.txt");
 	int test;
 	fillrandom();
 	for (int x = 0; x < gridSize; x++) {
 		for (int y = 0; y < gridSize; y++) {
 			if (alive) {
-
 			}
-			cout << displaychar(thijs[x][y]);
-
+			cout << displaychar(world[x][y]);
 		}
 		cout << endl;
 	}
