@@ -39,6 +39,8 @@ char cell;
 char alive;
 bool world[gridSize][gridSize] = { false };
 bool worldnew[gridSize][gridSize] = { false };
+bool life;
+int iterations;
 
 ////prototypes
 void menu();
@@ -46,19 +48,6 @@ void submenu();
 void draw();
 void fill();
 int alivecounter(int i, int j);
-
-//matrixnew filler THIS IS SUPPOSED TO CREATE THE NEW MATRIX BASED ON HOW MANY NEIGHBOURS 
-void matrixfiller() {
-	for (int i = 0; i < gridSize; i++) {
-		for (int j = 0; j < gridSize; j++) {
-			if (alivecounter(i, j) == 3)
-				worldnew[i][j] << true;
-			else if ((alivecounter(i, j) == 2) & (world[i][j]))
-				worldnew[i][j] << true;
-		}
-	}
-	world[gridSize][gridSize] = worldnew[gridSize][gridSize];
-}
 
 ////current menu////
 void currentmenu() {
@@ -245,15 +234,34 @@ int alivecounter(int i, int j) {
 	return neighbour_counter;
 }
 
+//matrixnew filler THIS IS SUPPOSED TO CREATE THE NEW MATRIX BASED ON HOW MANY NEIGHBOURS 
+void matrixfiller() {
+	for (int i = 0; i < gridSize; i++) {
+		for (int j = 0; j < gridSize; j++) {
+			if (alivecounter(i, j) == 3)
+				worldnew[i][j] << true;
+			else if ((alivecounter(i, j) == 2) & (world[i][j]))
+				worldnew[i][j] << true;
+		}
+	}
+	world[gridSize][gridSize] = worldnew[gridSize][gridSize];
+}
 
 //main
 int main() {
 	infile.open("infile.txt");
-	int test;
 	fill();
 	matrixfiller();
 	draw();
-	cin >> test;
-
+	cin >> iterations;
+	if (iterations >= 1) {
+		for (int t = 0; t <= iterations; t++) {
+			fill();
+			matrixfiller();
+			system("cls");
+			draw();
+		}
+	}
+	cout << endl;
 	return 0;
 }
