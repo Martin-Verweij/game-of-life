@@ -29,10 +29,9 @@ bool screenchange = true;
 struct coordinates {
 	int i; int j;
 };
-
 //Define gridSize and screensize
-const int w = 20;
-const int h = 50;
+const int w = 25;
+const int h = 100;
 const int gridSize = 1000;
 
 //Define a cell and world variables
@@ -45,21 +44,37 @@ void menu();
 void submenu();
 void draw();
 void fillrandom();
+void matrix();
 int alivecounter(int i, int j);
 
 //matrixnew filler THIS IS SUPPOSED TO CREATE THE NEW MATRIX BASED ON HOW MANY NEIGHBOURS 
 void matrixfiller() {
-	for (int i = 0; i < gridSize; i++) {
-		for (int j = 0; j < gridSize; j++) {
-			if (alivecounter(i, j) == 3)
-				worldnew[i][j] << true;
-			else if ((alivecounter(i, j) == 2) & (world[i][j]))
-				worldnew[i][j] << true;
+	for (int i = 0; i < gridSize + 1; i++) {
+		for (int j = 0; j < gridSize + 1; j++) {
+			bool alive2;
+			if (alivecounter(i, j) == 3) {
+				alive2 = true;
+			}
+			else if ((alivecounter(i, j) == 2) && (world[i][j])) {
+				alive2 = true;
+			}
+			else {
+				alive2 = false;
+			}
+			worldnew[i][j] = alive2;
 		}
 	}
-	world[gridSize][gridSize] = worldnew[gridSize][gridSize];
+	matrix();
 }
-
+//replace frames
+void matrix() {
+	for (int i = 0; i < gridSize + 1; i++) {
+		for (int j = 0; j < gridSize + 1; j++) {
+			world[i][j] = worldnew[i][j];
+		}
+	}
+	worldnew[gridSize][gridSize] = { false };
+}
 
 ////current menu////
 void currentmenu() {
@@ -150,7 +165,7 @@ char readfile() {
 		if (infile.eof()) {
 			infile.close();
 			donereading = true;
-			return '0';
+			return 'e';
 		}
 		else {
 			return charin;
@@ -200,19 +215,10 @@ char displaychar(bool alive) {
 void draw() {
 	for (int x = 0; x < w; x++) {
 		for (int y = 0; y < h; y++) {
-			cout << alivecounter(x,y); //IF YOU WANT TO SEE THE AMOUNT OF NEIGHBOURS CHANGE THE COUT TO alivecounter(x,y)
+			cout << displaychar(world[x][y]); //IF YOU WANT TO SEE THE AMOUNT OF NEIGHBOURS CHANGE THE COUT TO alivecounter(x,y)
 		} cout << endl;
 	}cout << menutext << endl;
 	screenchange = false;
-}
-//randgevallen
-bool inworld(int a, int b) {
-	if (a == 0) {
-		return false;
-	}
-	else {
-		return true;
-	}
 }
 //counts live neighbours
 int alivecounter(int i, int j) {
@@ -241,8 +247,11 @@ int main() {
 	infile.open("infile.txt");
 	int test;
 	fillrandom();
-	matrixfiller();
 	draw();
+	for (int a = 0; a < 100; a++) {
+		matrixfiller();
+		draw();
+	}
 	cin >> test;
 
 	return 0;
