@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <cstdlib>
 
 
 using namespace std;
@@ -12,22 +13,135 @@ using namespace std;
 //For a space that is 'empty' or 'unpopulated'
 //Each cell with three neighbors becomes populated.
 
+//menuvariables
+string menutext = "kies een optie uit: C, R, P, S";
+bool gameover = false;
+bool insubmenu = false;
+
 //fstream
 ifstream infile;
 bool donereading = false;
 char charin;
 int test;
+bool screenchange = true;
 
-//Define gridSize
-const int gridSize = 100;
-bool world[gridSize][gridSize] = { false };
+//coordinate NOT SURE HOW THIS WORKS 
+struct coordinates {
+	int i; int j;
+};
+
+//Define gridSize and screensize
+const int w = 20;
+const int h = 50;
+const int gridSize = 1000;
 
 //Define a cell
 char cell;
 char alive;
+bool world[gridSize][gridSize] = { false };
+bool worldnew[gridSize][gridSize] = { false };
+////prototypes
+void menu(); void submenu(); void draw(); void fillrandom();
+int alivecounter(int i, int j);
 
+//matrixnew filler THIS IS SUPPOSED TO CREATE THE NEW MATRIX BASED ON HOW MANY NEIGHBOURS 
+void matrixfiller() {
+	for (int i = 0; i < gridSize; i++) {
+		for (int j = 0; j < gridSize; j++) {
+			if (alivecounter(i, j) == 3)
+				worldnew[i][j] << true;
+			else if ((alivecounter(i, j) == 2) & (world[i][j]))
+				worldnew[i][j] << true;
+		}
+	}
+	world[gridSize][gridSize] = worldnew[gridSize][gridSize];
+}
+
+
+////current menu////
+void currentmenu() {
+	draw();
+	if (!insubmenu) {
+		menu();
+	}
+	else {
+		submenu();
+	}
+}
+////submenu-function////
+void submenu() {
+	insubmenu = true;
+	char input = cin.get();
+	do {
+		switch (input) {
+		case 'b':
+			fillrandom();
+		case 't':
+		case 'T':
+			insubmenu = false;
+			return;
+		}
+		input = cin.get();
+	} while (input != 't' || input != 'T');
+}
+////parameters function////
+void parameters() {
+	menutext = "dit is een submenu optie 't' om terug te gaan";
+	draw();
+	submenu();
+}
+////clear function////
+void clear() {
+	cout << 'text' << endl;
+}
+////rename function////
+void rename() {
+	cout << "text" << endl;
+}
+
+////main menu////
+void menu() {
+	menutext = "kies een optie uit: C, R, P, S";
+	draw();
+	char input = cin.get();
+	do {
+		switch (input) {
+		case 'c':
+		case 'C':
+			clear();
+			return;
+		case 'p':
+		case 'P':
+			parameters();
+			return;
+		case 'r':
+		case 'R':
+			rename();
+			return;
+		case 's':
+		case 'S':
+			gameover = true;
+			return;
+
+		}
+		input = cin.get();
+	} while ((input != 's') || (input != 'S'));
+}
+////number parser////
+int filternum() {
+	char input = cin.get();
+	int num = 0;
+	int numbercounter = 0;
+	while (numbercounter < 3) {
+		if (isdigit(input)) {
+			num << input;
+			numbercounter++;
+		}
+	}
+	return num;
+}
 //file reader
-char read() {
+char readfile() {
 	charin = infile.get();
 	if (!donereading) {
 		if (infile.eof()) {
@@ -47,7 +161,7 @@ void fillrandom() {
 	for (int c = 0; c < (gridSize * gridSize) + 1; c++) {
 		for (int i = 0; i < gridSize; i++) {
 			for (int j = 0; j < gridSize; j++) {
-				char infilechar = read();
+				char infilechar = readfile();
 				if (infilechar != 'e') {
 					if (infilechar == ' ') {
 						alive = false;
@@ -64,7 +178,6 @@ void fillrandom() {
 				else {
 					return;
 				}
-				//				cout << thijs[i][j];
 			}
 		}
 	}
@@ -75,24 +188,58 @@ char displaychar(bool alive) {
 		cell = 'X';
 	}
 	else {
-		cell = '.';
+		cell = ' ';
 	}
 	return cell;
 }
 
-//Create the display in console
+//Create the display in console 
+void draw() {
+	for (int x = 0; x < w; x++) {
+		for (int y = 0; y < h; y++) {
+			cout << displaychar(world[x][y]); //IF YOU WANT TO SEE THE AMOUNT OF NEIGHBOURS CHANGE THE COUT TO alivecounter(x,y)
+		} cout << endl;
+	}cout << menutext << endl;
+	screenchange = false;
+}
+//randgevallen
+bool inworld(int a, int b) {
+	if (a == 0) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+//counts live neighbours
+int alivecounter(int i, int j) {
+	int neighbour_counter = 0;
+	bool neighbour_state;
+	for (int x = -2; x < 1; x++) {
+		for (int y = -2; y < 1; y++) {
+			if (i + x < 0 || j + y < 0 || i + x > gridSize || j + y > gridSize) {
+				neighbour_state = false;
+			}
+			else {
+				neighbour_state = world[i + x][j + y];
+			}
+			if (neighbour_state) {
+				neighbour_counter++;
+			}
+		}
+	}
+	if (world[i][j]) {
+		neighbour_counter--;
+	}
+	return neighbour_counter;
+}
+//main
 int main() {
 	infile.open("infile.txt");
 	int test;
 	fillrandom();
-	for (int x = 0; x < gridSize; x++) {
-		for (int y = 0; y < gridSize; y++) {
-			if (alive) {
-			}
-			cout << displaychar(world[x][y]);
-		}
-		cout << endl;
-	}
+	matrixfiller();
+	draw();
 	cin >> test;
 
 	return 0;
