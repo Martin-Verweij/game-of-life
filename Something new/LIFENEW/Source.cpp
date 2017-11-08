@@ -1,73 +1,108 @@
 #include<iostream>
 #include<fstream>
 #include<string>
-
+#include <stdio.h>
+#include <wchar.h>
+#include <windows.h>
+#define ESC "\x1b"
 using namespace std;
 //ifstream
-ifstream infile;
-bool donereading;
+ifstream infile; //declaring ifstream input file;
+bool donereading; 
 //world
-const int grid = 1000;
-bool world[grid][grid] = { false };
-bool world_[grid][grid] = { false };
-
+const int grid = 1024; //world length
+bool world[grid][grid] = { false }; //matrix current world 
+bool world_[grid][grid] = { false }; //matrix current world 1 gen further
+static long getal = 29; 
+string buffer;
 //prototypes
-void overwrite_world();
-
-struct position {
-	int i;
-	int j;
+void overwrite_world(); void single_gen(); void reset(); void fill_random(int a); 
+int random(); int filter_num(int a);
+//struct for position in matrix
+struct position { 
+	int i;//position in column
+	int j;//position in row
 };
+//struct for cell
 struct cell {
-	position pos;
-	bool alive;
-	bool stays_alive;
-	int buren = 0;
+	position pos;//position in matrix
+	int buren = 0;//number of live neighbours
+	bool alive;//current state
+	bool stays_alive;//state in next generation
 };
+bool drawn = false;
+//class life
 class LIFE {
-	int screen_w = 100;
-	int screen_h = 25;
+	//rules of the game
 	int max_buren = 3;
 	int min_buren = 2;
-public:
-	int screen_w_0 = 0;
-	int screen_h_0 = 0; 
-	position cursor_ = { 5,5 };
-	char alive = '@';
-	char dead = ' ';
-	bool game_over = false;
-	string menu_text = "kies een optie uit: C, R, P, S of G voor generaties";
-	
-	void clear();
-	void draw(LIFE &L);
-	void parameters(LIFE &L);
-	void menu(LIFE &L);
-	void cell_initializer(int a, cell &c);
-	void set_position(int a, cell &c);
-	void is_alive(cell &c);
-	void tel_buren(cell &c);
-	void stays_alive(cell &c);
+public:	
+	int gen_counter = 0;
+	bool in_submenu = false; //to decide if in submenu
+	bool game_over = false; //to decide if the user has exited the game
+	int screen_w = 100; //screenwidth in characters
+	int screen_h = 20; //screenheigth in characters
+	position screen = { 0, 0 }; //screen starting position screen
+	position cursor_ = { 5,5 }; //starting position cursor
+	char alive = '%'; //character to display for live cells
+	char dead = ' '; //character to display for dead cells
+	string infilename;//the file to load the world
+	//member functions
+	void clear(LIFE L);//clears the view
+	void draw(LIFE L);//displays one frame
+	void parameters(LIFE &L);//submenu 
+	void menu(LIFE &L);//main menu
+	void cell_initializer(int a, cell &c);//sets values for each cell in world
+	void set_position(int a, cell &c);//sets the position of each cell
+	void is_alive(cell &c);//sets alive-state of each cell
+	void tel_buren(cell &c);//counts neighbours and sets the value for each cell
+	void stays_alive(cell &c);//decides wether the cell stays alive
 };
+void display_menu(LIFE L) {
+	for (int c = 0; c < 83; c++) { cout << '_'; } 
+	cout << endl;
+	if (L.in_submenu) {
+		cout << "[s]creen dimmensions" << " w = " << L.screen_w << ", h =" << L.screen_h;
+		cout << " | display [c]haracter " << "1= '" << L.alive << "' 0 = '" << L.dead << "'";
+		cout << endl;
+		for (int c = 0; c < 83; c++) { cout << '_'; }
+		cout << endl;
+		cout << "to go back press [t]" << endl;
+	}
+	else {
+		cout << "screen position (" << L.screen.i << ',' << L.screen.j << ")";
+		cout << " | alive = '" << L.alive << "' dead = '" << L.dead;
+		cout << "' | cursor [+] position (" << L.cursor_.i << ',' << L.cursor_.j << ") gen [" << L.gen_counter;
+		cout <<"]"<< endl;
+		for (int c = 0; c < 83; c++) { cout << '_'; }
+		cout << endl;
+		cout << "   [W][A][S][D] to move the view  |  [I][J][K][L] to move the cursor   " << endl;
+		cout << "   [p]arameters] | [f]ill(random) | [t]oggle | [r]eset | [g]enerations" << endl;
+		for (int c = 0; c < 83; c++) { cout << '_'; }
+		cout << endl;
+		cout << "e[x]it" << endl;
+	}
+}
 void LIFE::cell_initializer(int a, cell &c) {
 	set_position(a, c); is_alive(c); tel_buren(c); stays_alive(c);
 }
 void LIFE::set_position(int a, cell &c) {
-	c.pos.i = a / grid;
-	c.pos.j = a % grid;
+	c.pos = { a / grid, a % grid };
 }
 void LIFE::is_alive(cell &c) {
 	c.alive = world[c.pos.i][c.pos.j];
-//	if (c.alive) { c.buren--; }
+	if (c.alive){c.buren--;}
 }
 void LIFE::tel_buren(cell &c) {
-	c.buren += world[c.pos.i + 1][c.pos.j + 1];
-	c.buren += world[c.pos.i + 1][c.pos.j];
-	c.buren += world[c.pos.i][c.pos.j + 1];
-	c.buren += world[c.pos.i - 1][c.pos.j + 1];
-	c.buren += world[c.pos.i + 1][c.pos.j - 1];
-	c.buren += world[c.pos.i][c.pos.j - 1];
-	c.buren += world[c.pos.i - 1][c.pos.j];
-	c.buren += world[c.pos.i - 1][c.pos.j - 1];
+	for (int a = 0; a < 9; a++) {
+		position p = { a / 3,a % 3 };
+		if (((c.pos.i == 0 && p.i == 0) || (c.pos.j == 0 && p.j == 0)) ||
+		   ((c.pos.i == grid && p.i == 2) || (c.pos.j == grid && p.j == 2))) {	}
+		else {
+			position b = { c.pos.i + p.i - 1,c.pos.j + p.j - 1 };
+			c.buren += world[b.i][b.j];
+		}
+	}
 }
 void LIFE::stays_alive(cell &c) {
 	if ((c.buren == max_buren) || (c.buren == min_buren && c.alive)) {
@@ -77,7 +112,158 @@ void LIFE::stays_alive(cell &c) {
 		c.stays_alive = false;
 	}
 }
-//file reader
+void wasd(char c, LIFE &L) {
+	switch (c) {
+	case 'w':
+		if (L.screen.i != 0) { L.screen.i--; }
+		break;
+	case 's':
+		if (L.screen.i != grid) { L.screen.i++; }
+		break;
+	case 'a':
+		if (L.screen.j != 0) { L.screen.j--; }
+		break;
+	case 'd':
+		if (L.screen.j != grid) { L.screen.j++; }
+	}
+}
+void cursor(char c, LIFE &L) {
+	switch (c) {
+	case 'i':
+		if (L.cursor_.i != 0) { L.cursor_.i--; }
+		break;
+	case 'k':
+		if (L.cursor_.i != grid) { L.cursor_.i++; }
+		break;
+	case 'j':
+		if (L.cursor_.j != 0) { L.cursor_.j--; }
+		break;
+	case 'l':
+		if (L.cursor_.j != grid) { L.cursor_.j++; }
+		break;
+	case 't':
+		if (world[L.cursor_.i][L.cursor_.j]) {
+			world[L.cursor_.i][L.cursor_.j] = false;
+		}
+		else world[L.cursor_.i][L.cursor_.j] = true;
+	}
+}
+void fetch_percentage() {
+	cout << "Approximately what percentage of cells do you want to be alive" << endl;
+	char input = cin.get();
+	int a = filter_num(3);
+	if (a > 100) { a = 100; }
+	fill_random(a);
+}
+void many_gen(LIFE &L) {
+	cout << "how many generations do you want to run?" << endl;
+	char input = cin.get();
+	int z = filter_num(4);
+	for (L.gen_counter; L.gen_counter < z; L.gen_counter++) { single_gen(); L.draw(L); };
+	L.gen_counter = 0;
+}
+void LIFE::menu(LIFE &L) {
+	char input;
+	input = cin.get();
+	if (input == 'w' || input == 's' || input =='a'|| input==  'd') {
+		wasd(input, L);
+	}
+	else if (input == 'i' || input == 'j' || input == 'k' || input == 'l' || input == 't') {
+		cursor(input, L);
+	}
+	else {
+		switch (input) {
+		case 'e':
+			single_gen();
+			break;
+		case 'f':
+			fetch_percentage();
+			break;
+		case 'g':
+			many_gen(L);
+			break;
+		case 'c':
+			clear(L);
+			break;
+		case 'p':
+			L.in_submenu = true;
+			parameters(L);
+			break;
+		case 'r':
+			reset();
+			break;
+		case 'x':
+			L.game_over = true;
+		}
+	}
+	draw(L);
+}
+int filter_num(int a) {
+	char input = cin.get();
+	int number_length = 0;
+	int to_return = 0;
+	while (input != '\n') {
+		if (number_length < a) {
+			if (isdigit(input)) {
+				number_length++;
+				to_return = to_return*10 + (input - '0');
+			}
+		}
+		input = cin.get();
+	}
+	return int(to_return);
+}
+char get_char() {
+	char kar = cin.get();
+	char to_return = kar;
+	if (kar == '\n') { get_char(); }
+	while(kar != '\n'){
+		kar = cin.get();
+	} return to_return;
+}
+void LIFE::parameters(LIFE &L) {
+	draw(L);
+	char input = cin.get();
+	switch (input) {
+	case 's':
+		cout << "input the desired heigth of the display" << endl;
+		cin >> L.screen_h;
+		cout << "input the desired width of the display" << endl;
+		cin >> L.screen_w;
+		break;
+	case 'c':
+	{
+		char kar = cin.get();
+		cout << "change state 1 char to:" << endl;
+		L.alive = get_char();
+		cout << "change state 0 char to:" << endl;
+		L.dead = get_char();
+		break;
+	}
+	case 't':
+		L.in_submenu = false;
+		return;
+	default:
+		parameters(L);
+	} L.in_submenu = false;
+}
+void LIFE::draw(LIFE L) {
+//	system("cls");
+
+	int c = 0;
+	for (int x = 0; x < L.screen_h; x++) {
+		for (int y = 0; y < L.screen_w; y++) {
+			if (drawn) {
+				printf(ESC "(0");
+			}
+			if (x == cursor_.i - L.screen.i && y == cursor_.j - L.screen.j) { cout << '+'; }
+			else if (world[x + L.screen.i][y + L.screen.j]) { cout << L.alive; }
+			else cout << L.dead;
+		} 	if (!drawn) {
+		}cout << endl;
+	}
+	display_menu(L);
+}
 char readfile() {
 	char charin = infile.get();
 	if (!donereading) {
@@ -93,7 +279,7 @@ char readfile() {
 	return 'e';
 }
 void fill_world() {
-	for (int c = 0; c < (grid * grid) + 1; c++) {
+	for (int c = 0; c < grid * grid; c++) {
 		for (int i = 0; i < grid; i++) {
 			for (int j = 0; j < grid; j++) {
 				char infilechar = readfile();
@@ -114,22 +300,6 @@ void fill_world() {
 		}
 	}
 }
-void LIFE::draw(LIFE &L) {
-	cout << string(50, '\n');
-//	static char buffer[25 * 100];
-//	char * p_next_write = &buffer[0];
-	int c = 0;
-	for (int x = 0; x < 25; x++) {
-		for (int y = 0; y < 100; y++) {
-//			*p_next_write++ = displaychar(world[x][y]);
-			if (x == cursor_.i && y == cursor_.j) { cout << '+'; }
-			else if (world[x+L.screen_h_0][y+L.screen_w_0]) { cout << L.alive; }
-			else cout << L.dead;
-		} cout << '\n';
-//		*p_next_write++ = '\n';
-	}//cout.write(&buffer[0], 25*100);
-	cout << L.menu_text;
-}
 void single_gen() {
 	LIFE G;
 	for (int g = 0; g < grid * grid; g++) {
@@ -137,8 +307,7 @@ void single_gen() {
 		G.cell_initializer(g, cell);
 		world[cell.pos.i][cell.pos.j] = cell.alive;
 		world_[cell.pos.i][cell.pos.j] = cell.stays_alive;
-	}
-	overwrite_world();
+	} overwrite_world();
 }
 void overwrite_world() {
 	for (int c = 0; c < grid*grid; c++) {
@@ -146,39 +315,11 @@ void overwrite_world() {
 		world[p.i][p.j] = world_[p.i][p.j];
 	}
 }
-void LIFE::parameters(LIFE &L) {
-	menu_text = "Druk op l om de cell ascii waarde te veranderen";
-	draw(L);
-	char input = cin.get();
-	switch (input){
-		case 'l':
-			cout << "change state 1 char to:" << endl;
-			cin >> L.alive;
-			cout << "change state 0 char to:" << endl;
-			cin >> L.dead;
-		case 't':
-			return;
-		default:
-			parameters(L);
-	}
-}
-int filter_num(int a) {
-	char input = cin.get();
-	int number_length = 0;
-	int to_return = 0;
-	while (number_length < a) {
-		if (isdigit(input)) {
-			number_length++;
-			to_return << input;
-		}
-		input = cin.get();
-	} return a;
-}
-void LIFE::clear() {
+void LIFE::clear(LIFE L) {
 	for (int a = 0; a < screen_w * screen_h + 1; a++) {
 		for (int i = 0; i < screen_h + 1; i++) {
 			for (int j = 0; j < screen_w + 1; j++) {
-				world[i][j] = false;
+				world[i + L.screen.i][j + L.screen.j] = false;
 			}
 		}
 	}
@@ -189,61 +330,44 @@ void reset() {
 		world[p.i][p.j] = false;
 	}
 }
-void LIFE::menu(LIFE &L) {
-	char input;
-	L.menu_text = "kies een optie uit: C, R, P, S of G voor generaties";
-	input = cin.get();
-	switch (input) {
-		case '2':
-			L.screen_h_0--;
-			break;
-		case 'w':
-			L.screen_h_0++;
-			break;
-		case 'q':
-			L.screen_w_0++;
-			break;
-		case 'e':
-			L.screen_w_0--;
-			break;
-		case 'i':
-			L.cursor_.i--;
-			break;
-		case 'k':
-			L.cursor_.i++;
-			break;
-		case 'j': 
-			L.cursor_.j--;
-			break;
-		case 'l':
-			L.cursor_.j++;
-			break;
-		case 'u':
-			world[L.cursor_.i][L.cursor_.j] = true;
-			break;
-		case 'g':
-			for (int i = 0; i < 80; i++) { single_gen(); draw(L); }
-		case 'c':
-			clear();
-			break;
-		case 'p':
-			parameters(L);
-			break;
-		case 'r':
-			reset();
-			break;
-		case 's':
-			L.game_over = true;
-	} draw(L);
+int random() {
+	getal = (19051 * getal + 1);
+	return abs(getal);
 }
+void fill_random(int a) {
+	for (int c = 0; c < grid*grid; c++) {
+		position p = { c / grid, c % grid };
+		if (a > random() % 100) {
+			world[p.i][p.j] = true;
+		}
+		else { world[p.i][p.j] = false; }
+	}
+}
+void open_file(LIFE &L) {
+	cout << "do you wish to load the world from a file?(y/n)" << endl;
+	char ans;
+	cin >> ans;
+	switch (ans) {
+	case 'y':
+		cout << "what file do you want to open" << endl;
+		cin >> L.infilename;
+		infile.open(L.infilename);
+		return;
+	case 'n':
+		return;
+	default:
+		open_file(L);
+	}
+}
+
+
 int main() {
 	LIFE M;
-	infile.open("infile.txt");
+	open_file(M);
 	fill_world();
 	M.draw(M);
-	cell c;
+	drawn = true;
 	while (!M.game_over) {
 		M.menu(M);
 	}
-	cin.get();
 }
