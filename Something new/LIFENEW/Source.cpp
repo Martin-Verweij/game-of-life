@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <wchar.h>
 #include <windows.h>
-#define ESC "\x1b"
+
+#define ESC "\x1b["
 using namespace std;
 //ifstream
 ifstream infile; //declaring ifstream input file;
@@ -42,8 +43,8 @@ public:
 	bool game_over = false; //to decide if the user has exited the game
 	int screen_w = 100; //screenwidth in characters
 	int screen_h = 20; //screenheigth in characters
-	position screen = { 0, 0 }; //screen starting position screen
-	position cursor_ = { 5,5 }; //starting position cursor
+	position screen = { 100, 100 }; //screen starting position screen
+	position cursor_ = { screen.i + 10, screen.j + 10 }; //starting position cursor
 	char alive = '%'; //character to display for live cells
 	char dead = ' '; //character to display for dead cells
 	string infilename;//the file to load the world
@@ -76,11 +77,11 @@ void display_menu(LIFE L) {
 		cout <<"]"<< endl;
 		for (int c = 0; c < 83; c++) { cout << '_'; }
 		cout << endl;
-		cout << "   [W][A][S][D] to move the view  |  [I][J][K][L] to move the cursor   " << endl;
-		cout << "   [p]arameters] | [f]ill(random) | [t]oggle | [r]eset | [g]enerations" << endl;
+		cout << "   [W][A][S][D] to move the view  |  [I][J][K][L] to move the cursor \n" ;
+		cout << "   [p]arameters] | [f]ill(random) | [t]oggle | single g[e]n | [g]enerations \n";
+		cout << "   [c]lear | [r]eset | [r]eset | e[x]it \n";
 		for (int c = 0; c < 83; c++) { cout << '_'; }
 		cout << endl;
-		cout << "e[x]it" << endl;
 	}
 }
 void LIFE::cell_initializer(int a, cell &c) {
@@ -118,13 +119,13 @@ void wasd(char c, LIFE &L) {
 		if (L.screen.i != 0) { L.screen.i--; }
 		break;
 	case 's':
-		if (L.screen.i != grid) { L.screen.i++; }
+		if (L.screen.i + L.screen_h != grid) { L.screen.i++; }
 		break;
 	case 'a':
 		if (L.screen.j != 0) { L.screen.j--; }
 		break;
 	case 'd':
-		if (L.screen.j != grid) { L.screen.j++; }
+		if (L.screen.j + L.screen_w != grid) { L.screen.j++; }
 	}
 }
 void cursor(char c, LIFE &L) {
@@ -162,6 +163,56 @@ void many_gen(LIFE &L) {
 	for (L.gen_counter; L.gen_counter < z; L.gen_counter++) { single_gen(); L.draw(L); };
 	L.gen_counter = 0;
 }
+void open_file(LIFE &L) {
+	cout << "do you wish to load the world from a file?(y/n)" << endl;
+	char ans;
+	cin >> ans;
+	switch (ans) {
+	case 'y':
+		cout << "what file do you want to open" << endl;
+		cin >> L.infilename;
+		infile.open(L.infilename);
+		return;
+	case 'n':
+		return;
+	default:
+		open_file(L);
+	}
+}
+char readfile() {
+	char charin = infile.get();
+	if (!donereading) {
+		if (infile.eof()) {
+			donereading = true;
+			infile.close();
+			return 'e';
+		}
+		else {
+			return charin;
+		}
+	}
+	return 'e';
+}
+void fill_world(LIFE L) {
+	for (int i = 0; i < grid; i++) {
+		for (int j = 0; j < grid; j++) {
+			char infilechar = readfile();
+			if (infilechar != 'e') {
+				if (infilechar == ' ') {
+					world[i + L.screen.i][j + L.screen.j] = false;
+				}
+				else if (infilechar == '\n') {
+					world[i + L.screen.i][j + L.screen.j] = false;
+					i++; j = -1;
+				}
+				else {
+					world[i + L.screen.i][j + L.screen.j] = true;
+				}
+			}
+			else return;
+		}
+	}
+}
 void LIFE::menu(LIFE &L) {
 	char input;
 	input = cin.get();
@@ -175,6 +226,10 @@ void LIFE::menu(LIFE &L) {
 		switch (input) {
 		case 'e':
 			single_gen();
+			break;
+		case 'o':
+			open_file(L);
+			fill_world(L);
 			break;
 		case 'f':
 			fetch_percentage();
@@ -202,11 +257,12 @@ int filter_num(int a) {
 	char input = cin.get();
 	int number_length = 0;
 	int to_return = 0;
+	if (input == '\n') { filter_num(a); }
 	while (input != '\n') {
 		if (number_length < a) {
 			if (isdigit(input)) {
 				number_length++;
-				to_return = to_return*10 + (input - '0');
+				to_return = to_return * 10 + (input - '0');
 			}
 		}
 		input = cin.get();
@@ -226,11 +282,16 @@ void LIFE::parameters(LIFE &L) {
 	char input = cin.get();
 	switch (input) {
 	case 's':
+	{
 		cout << "input the desired heigth of the display" << endl;
-		cin >> L.screen_h;
+		char a = cin.get();
+		L.screen_h = filter_num(3);
 		cout << "input the desired width of the display" << endl;
-		cin >> L.screen_w;
+		char b = cin.get();
+		L.screen_w = filter_num(3);
+//		system("cls");
 		break;
+	}
 	case 'c':
 	{
 		char kar = cin.get();
@@ -249,56 +310,17 @@ void LIFE::parameters(LIFE &L) {
 }
 void LIFE::draw(LIFE L) {
 //	system("cls");
-
+	printf(ESC "H");
 	int c = 0;
 	for (int x = 0; x < L.screen_h; x++) {
 		for (int y = 0; y < L.screen_w; y++) {
-			if (drawn) {
-				printf(ESC "(0");
-			}
 			if (x == cursor_.i - L.screen.i && y == cursor_.j - L.screen.j) { cout << '+'; }
 			else if (world[x + L.screen.i][y + L.screen.j]) { cout << L.alive; }
 			else cout << L.dead;
-		} 	if (!drawn) {
-		}cout << endl;
+		} cout << endl;
 	}
+	printf(ESC "J");
 	display_menu(L);
-}
-char readfile() {
-	char charin = infile.get();
-	if (!donereading) {
-		if (infile.eof()) {
-			donereading = true;
-			infile.close();
-			return 'e';
-		}
-		else {
-			return charin;
-		}
-	}
-	return 'e';
-}
-void fill_world() {
-	for (int c = 0; c < grid * grid; c++) {
-		for (int i = 0; i < grid; i++) {
-			for (int j = 0; j < grid; j++) {
-				char infilechar = readfile();
-				if (infilechar != 'e') {
-					if (infilechar == ' ') {
-						world[i][j] = false;
-					}
-					else if (infilechar == '\n') {
-						world[i][j] = false;
-						i++; j = -1;
-					}
-					else {
-						world[i][j] = true;
-					}
-				}
-				else return;
-			}
-		}
-	}
 }
 void single_gen() {
 	LIFE G;
@@ -343,28 +365,62 @@ void fill_random(int a) {
 		else { world[p.i][p.j] = false; }
 	}
 }
-void open_file(LIFE &L) {
-	cout << "do you wish to load the world from a file?(y/n)" << endl;
-	char ans;
-	cin >> ans;
-	switch (ans) {
-	case 'y':
-		cout << "what file do you want to open" << endl;
-		cin >> L.infilename;
-		infile.open(L.infilename);
-		return;
-	case 'n':
-		return;
-	default:
-		open_file(L);
+int vt()
+{
+	// Set output mode to handle virtual terminal sequences
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut == INVALID_HANDLE_VALUE)
+	{
+		return false;
 	}
+	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+	if (hIn == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+
+	DWORD dwOriginalOutMode = 0;
+	DWORD dwOriginalInMode = 0;
+	if (!GetConsoleMode(hOut, &dwOriginalOutMode))
+	{
+		return false;
+	}
+	if (!GetConsoleMode(hIn, &dwOriginalInMode))
+	{
+		return false;
+	}
+
+	DWORD dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+	DWORD dwRequestedInModes = ENABLE_VIRTUAL_TERMINAL_INPUT;
+
+	DWORD dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
+	if (!SetConsoleMode(hOut, dwOutMode))
+	{
+		// we failed to set both modes, try to step down mode gracefully.
+		dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+		dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
+		if (!SetConsoleMode(hOut, dwOutMode))
+		{
+			// Failed to set any VT mode, can't do anything here.
+			return -1;
+		}
+	}
+
+	DWORD dwInMode = dwOriginalInMode | ENABLE_VIRTUAL_TERMINAL_INPUT;
+	if (!SetConsoleMode(hIn, dwInMode))
+	{
+		// Failed to set VT input mode, can't do anything here.
+		return -1;
+	}
+
+	return 0;
 }
-
-
 int main() {
+	vt();
+	printf(ESC "25l");
 	LIFE M;
 	open_file(M);
-	fill_world();
+	fill_world(M);
 	M.draw(M);
 	drawn = true;
 	while (!M.game_over) {
