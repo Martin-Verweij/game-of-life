@@ -7,19 +7,19 @@
 using namespace std;
 //ifstream
 ifstream infile;                         //declaring ifstream input file;
-bool donereading; 
+bool donereading;
 //world
 const int grid = 1024;                                     //world length
 bool world[grid][grid] = { false };                //matrix current world 
 bool world_[grid][grid] = { false }; //matrix current world 1 gen further
-static long getal = 29; 
+static long getal = 29;
 string buffer;
 //prototypes
 void overwrite_world(); void single_gen();
-void reset(); void fill_random(int a); 
+void reset(); void fill_random(int a);
 int random(); int filter_num(int a);
 //struct for position in matrix
-struct position { 
+struct position {
 	int i;                                           //position in column
 	int j;                                              //position in row
 };
@@ -35,7 +35,7 @@ class LIFE {
 	//rules of the game
 	int max_buren = 3;
 	int min_buren = 2;
-public:	
+public:
 	int gen_counter = 0;
 	bool in_submenu = false;                    //to decide if in submenu
 	bool game_over = false;   //to decide if the user has exited the game
@@ -46,7 +46,7 @@ public:
 	char alive = '%';               //character to display for live cells
 	char dead = ' ';                //character to display for dead cells
 	string infilename;                       //the file to load the world
-	//member functions
+											 //member functions
 	void clear(LIFE L);                                 //clears the view
 	void draw(LIFE L);                               //displays one frame
 	void parameters(LIFE &L);                        //parameters submenu 
@@ -59,25 +59,25 @@ public:
 };
 //this functions decides which menu to display and then displays it
 void display_menu(LIFE L) {
-	for (int c = 0; c < 83; c++) { cout << '_'; } 
+	for (int c = 0; c < 83; c++) { cout << '_'; }
 	cout << endl;
 	if (L.in_submenu) {
 		cout << "[s]creen dimmensions w = " << L.screen_w << ", h =";
-		cout << L.screen_h << " | display [c]haracter 1= '" << L.alive ;
+		cout << L.screen_h << " | display [c]haracter 1= '" << L.alive;
 		cout << "' 0 = '" << L.dead << "'" << endl;
 		for (int c = 0; c < 83; c++) { cout << '_'; }
 		cout << endl;
 		cout << "to go back press [t]" << endl;
 	}
 	else {
-		cout << "screen position (" << L.screen.i <<','<<L.screen.j<<")" ;
+		cout << "screen position (" << L.screen.i << ',' << L.screen.j << ")";
 		cout << " | alive = '" << L.alive << "' dead = '" << L.dead;
 		cout << "' | cursor [+] position (" << L.cursor_.i << ',';
-		cout << L.cursor_.j << ") gen [" << L.gen_counter << "]"<< endl;
+		cout << L.cursor_.j << ") gen [" << L.gen_counter << "]" << endl;
 		for (int c = 0; c < 83; c++) { cout << '_'; }
 		cout << endl;
 		cout << "  [W][A][S][D] to move the view  | ";
-		cout << "[I][J][K][L] to move the cursor \n" ;
+		cout << "[I][J][K][L] to move the cursor \n";
 		cout << "  [p]arameters] | [f]ill(random) | [t]oggle";
 		cout << "| single g[e]n | [g]enerations \n";
 		cout << "   [c]lear | [r]eset | [r]eset | e[x]it \n";
@@ -102,9 +102,10 @@ void LIFE::is_alive(cell &c) {
 void LIFE::tel_buren(cell &c) {
 	for (int a = 0; a < 9; a++) {  //creates coordinate values for each
 		position p = { a / 3,a % 3 };                       //neighbour             
-		//prevents memory outside the matrix from being accessed
-		if (((c.pos.i == 0 && p.i == 0) || (c.pos.j== 0 && p.j == 0))||
-		   ((c.pos.i == grid && p.i ==2)||(c.pos.j==grid && p.j==2))){}
+															//prevents memory outside the matrix from being accessed
+		if (((c.pos.i == 0 && p.i == 0) || (c.pos.j == 0 && p.j == 0)) ||
+			((c.pos.i == grid && p.i == 2) || (c.pos.j == grid && p.j == 2))) {
+		}
 		else {
 			//makes the cell the center of the 3*3 square
 			position b = { c.pos.i + p.i - 1,c.pos.j + p.j - 1 };
@@ -115,7 +116,7 @@ void LIFE::tel_buren(cell &c) {
 void LIFE::stays_alive(cell &c) {
 	if ((c.buren == max_buren) || (c.buren == min_buren && c.alive)) {
 		c.stays_alive = true;         //if 3 neigbours cell stays alive
-			          //if 2 neighbours and cell alive also stays alive
+									  //if 2 neighbours and cell alive also stays alive
 	}
 	else { //otherwise cell dies
 		c.stays_alive = false;
@@ -172,8 +173,8 @@ void many_gen(LIFE &L) {
 	cout << "how many generations do you want to run?" << endl;
 	char input = cin.get();
 	int z = filter_num(4);
-	for (L.gen_counter; L.gen_counter < z; L.gen_counter++) { 
-		single_gen(); L.draw(L); 
+	for (L.gen_counter; L.gen_counter < z; L.gen_counter++) {
+		single_gen(); L.draw(L);
 	}
 	L.gen_counter = 0;
 }
@@ -203,7 +204,7 @@ char readfile() {
 			donereading = true;
 			infile.close();
 			return 'e';
-		     //to communicate that the file has been read through 
+			//to communicate that the file has been read through 
 		}
 		else {
 			return charin;
@@ -236,37 +237,37 @@ void fill_world(LIFE L) {
 //main menu function
 void LIFE::menu(LIFE &L) {
 	char input = cin.get();                    //first input char
-	if (input == 'w' || input == 's' 
-	   || input =='a'|| input==  'd') {
+	if (input == 'w' || input == 's'
+		|| input == 'a' || input == 'd') {
 		wasd(input, L);     //calls in the view movement function
 	}
-	else if (input == 'i' || input == 'j' || input == 'k' 
-		    || input =='l'|| input == 't' ) {
+	else if (input == 'i' || input == 'j' || input == 'k'
+		|| input == 'l' || input == 't') {
 		cursor(input, L);          //calls in the cursor function
 	}
 	else {
 		switch (input) {     //decides what to do with user input
-			case 'e':                       //runs one generation
-				single_gen();
-				break;
-			case 'f':   //fills the world randomly (see function)
-				fetch_percentage();
-				break;
-			case 'g':      //runs many generations (see function)
-				many_gen(L);
-				break;
-			case 'c':       //clears view (more info at function)
-				clear(L);
-				break;
-			case 'p':              //opens the parameters submenu
-				L.in_submenu = true;    //to display correct menu
-				parameters(L);
-				break;
-			case 'r':                   //clears the entire world
-				reset();
-				break;
-			case 'x':               //exits the menu and the game
-				L.game_over = true;
+		case 'e':                       //runs one generation
+			single_gen();
+			break;
+		case 'f':   //fills the world randomly (see function)
+			fetch_percentage();
+			break;
+		case 'g':      //runs many generations (see function)
+			many_gen(L);
+			break;
+		case 'c':       //clears view (more info at function)
+			clear(L);
+			break;
+		case 'p':              //opens the parameters submenu
+			L.in_submenu = true;    //to display correct menu
+			parameters(L);
+			break;
+		case 'r':                   //clears the entire world
+			reset();
+			break;
+		case 'x':               //exits the menu and the game
+			L.game_over = true;
 		}
 	}
 	draw(L);
@@ -280,7 +281,7 @@ int filter_num(int a) {            //int a specifies number length
 	while (input != '\n') {
 		if (number_length < a) {
 			if (isdigit(input)) {
-				number_length++; 
+				number_length++;
 				to_return = to_return * 10 + (input - '0');
 			}
 		}
@@ -293,16 +294,16 @@ char get_char() {
 	char kar = cin.get();
 	char to_return = kar;               //to return the first char
 	if (kar == '\n') { get_char(); }        //ignores empty enters
-	while(kar != '\n'){
+	while (kar != '\n') {
 		kar = cin.get();
-	} return to_return; 
+	} return to_return;
 }
-           // parameters submenu allows user to change some values
+// parameters submenu allows user to change some values
 void LIFE::parameters(LIFE &L) {
 	draw(L);                        //draws new frame with submenu
 	char input = cin.get();
 	switch (input) {
-	case 's': 
+	case 's':
 	{                //allows user to change dimensions of display
 		cout << "input the desired heigth of the display" << endl;
 		char a = cin.get();
@@ -311,7 +312,7 @@ void LIFE::parameters(LIFE &L) {
 		L.screen_w = filter_num(3);
 		break;
 	}
-	case 'c': 
+	case 'c':
 	{    //changes the display characters for alive and dead cells
 		char kar = cin.get();
 		cout << "change state 1 char to:" << endl;
@@ -320,7 +321,7 @@ void LIFE::parameters(LIFE &L) {
 		L.dead = get_char();
 		break;
 	}
-	case 't': 
+	case 't':
 		// returns to main menu
 		L.in_submenu = false;
 		return;
@@ -335,18 +336,18 @@ void LIFE::draw(LIFE L) {
 		for (int y = 0; y < L.screen_w; y++) {
 			//displays border
 			if ((L.screen.i == x && x == 0) ||
-			   (L.screen.j == y && y == 0)) {
+				(L.screen.j == y && y == 0)) {
 				cout << '#';
 			}
-			else if ((L.screen.i == grid - L.screen_h 
-				&& x == L.screen_h-1) ||
-				(L.screen.j==grid-L.screen_w&&y==L.screen_w-1)){
+			else if ((L.screen.i == grid - L.screen_h
+				&& x == L.screen_h - 1) ||
+				(L.screen.j == grid - L.screen_w&&y == L.screen_w - 1)) {
 				cout << '#';
 			}
 			//displays cursor
 			else if (x == cursor_.i - L.screen.i &&
-				y == cursor_.j - L.screen.j) { 
-				cout << '+'; 
+				y == cursor_.j - L.screen.j) {
+				cout << '+';
 			}
 			//displays live cells
 			else if (world[x + L.screen.i][y + L.screen.j]) {
@@ -414,7 +415,7 @@ void infoblokje() {
 	cout << "gemaakt en gecompiled in MICROSOFT VISUAL STUDIO";
 	cout << endl << "Studentennummber: s2028719 ";
 	cout << " Studierichting: Natuur/Wiskunde ";
-	cout << " Jaar van aankomst: 2017"  << endl;
+	cout << " Jaar van aankomst: 2017" << endl;
 	cout << "Programmeer Opgave: LIFE" << endl;
 	cout << "Dit is een console based game of life" << endl;
 	cout << "De gebruiker word gepresenteerd met";
@@ -428,7 +429,7 @@ int main() {
 	fill_world(M);                          //fills with input file
 	M.draw(M);                              //draws the first frame	                      
 	while (!M.game_over) {        //everything is run from the menu 
-		M.menu(M); 
+		M.menu(M);
 	} //so as long as the user hasnt exited the menu gets called in
 	return 0;
-} 
+}
